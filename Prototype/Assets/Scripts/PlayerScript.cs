@@ -8,9 +8,16 @@ public class PlayerScript : MonoBehaviour {
 	public float forwardSpeed = 0.2f;
 	public bool debugMovement = false;	//Set variable private and false at release
 	
+	public Vector3 oldPos;
+	
+	//Added
+	public Transform bulletPrefab;
+	public int readyToShoot = 60;
+	private bool shooting = false;
+	private int shootCounter = 0;
+	
 	private float centerX = Screen.width / 2.0f;
 	private float centerY = Screen.height / 2.0f;
-	private Vector3 oldPos;
 	
 	// Use this for initialization
 	void Start () {
@@ -19,8 +26,9 @@ public class PlayerScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		oldPos = transform.position;
-		
+	
+	oldPos = transform.position;
+				
 		if (debugMovement) {
 			if (Input.GetKey(KeyCode.UpArrow)) {
 				transform.Translate(0,moveSpeed,0);
@@ -40,10 +48,19 @@ public class PlayerScript : MonoBehaviour {
 			if (Input.GetMouseButton(0)) {
 				Vector3 mousePos = Input.mousePosition;
 				float dist = getDistToCenter(mousePos.x, mousePos.y);
-				float speed = moveSpeed * (dist / maxTouchDist);
-				float angle = getAngleToCenter(mousePos.x, mousePos.y);
-				
-				transform.Translate (Mathf.Cos(angle)*speed, Mathf.Sin(angle)*speed, 0);
+				//added
+				if(dist < 32){
+					if(!shooting){
+						shoot();
+						shooting = true;
+					}
+				//added
+				}else{
+					float speed = moveSpeed * (dist / maxTouchDist);
+					float angle = getAngleToCenter(mousePos.x, mousePos.y);
+					
+					transform.Translate (Mathf.Cos(angle)*speed, Mathf.Sin(angle)*speed, 0);
+				}
 			}
 		}
 		transform.Translate(0,0,forwardSpeed);
@@ -53,7 +70,7 @@ public class PlayerScript : MonoBehaviour {
         	Debug.Log ("front!");
 			transform.position = oldPos;
     	}
-		
+	
 		Vector3 dwn = transform.TransformDirection (Vector3.down);
     	if (Physics.Raycast (transform.position, dwn, 1.0f)) {
         	Debug.Log ("Down!");
@@ -71,6 +88,15 @@ public class PlayerScript : MonoBehaviour {
 	        Debug.Log ("Right!");
 			transform.position = oldPos;
 	    }
+		//added
+		if (shooting){
+			shootCounter++;
+			if(shootCounter == readyToShoot){
+				shooting = false;
+				shootCounter = 0;
+			}
+		}
+			
 	}
 	
 	private float getDistToCenter(float posX, float posY) {
@@ -79,7 +105,6 @@ public class PlayerScript : MonoBehaviour {
 		float res = (diffX*diffX) + (diffY*diffY);
 		res = Mathf.Sqrt(res);
 		if (res > maxTouchDist) { res = maxTouchDist; }
-		Debug.Log (res);
 		return res;
 	}
 	
@@ -89,5 +114,9 @@ public class PlayerScript : MonoBehaviour {
 		float angle = Mathf.Atan2(diffY, diffX);
 		//Debug.Log (angle);
 		return angle;
+	}
+	//added
+	private void shoot(){
+		Instantiate(bulletPrefab, new Vector3(transform.position.x,transform.position.y,transform.position.z+2f) ,transform.rotation );
 	}
 }
